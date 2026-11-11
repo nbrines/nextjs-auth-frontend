@@ -1,50 +1,54 @@
-"use client";
+'use client';
 
-import { useRouter } from "next/navigation";
-import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { clearTokens } from "@/lib/auth";
-import { CONFIG } from "@/lib/config";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { isChecking } = useAuthGuard({ requireAuth: true });
-
-  if (isChecking) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-muted-foreground">Verifying session...</p>
-      </div>
-    );
-  }
 
   const handleLogout = () => {
-    clearTokens();
-    router.push(CONFIG.ROUTES.LOGIN);
+    localStorage.removeItem('token');
+    router.push('/login');
   };
 
   return (
-    <div className="min-h-screen p-8 bg-background">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <header className="flex justify-between items-center border-b pb-4">
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <Button variant="destructive" onClick={handleLogout}>
+    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      {/* Top Navbar */}
+      <nav className="border-b border-zinc-800 bg-zinc-900 px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
+          <h1 className="text-xl font-bold tracking-tight text-white">Dashboard</h1>
+          <button
+            onClick={handleLogout}
+            className="rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700 hover:text-white"
+          >
             Logout
-          </Button>
-        </header>
+          </button>
+        </div>
+      </nav>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome back!</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              You are authenticated. Your active JWT session is stored in LocalStorage.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Main Content */}
+      <main className="mx-auto max-w-6xl p-6">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8 shadow-xl">
+          <h2 className="text-2xl font-semibold text-white">Welcome back!</h2>
+          <p className="mt-2 text-zinc-400">
+            You have successfully logged in and accessed your backend service.
+          </p>
+
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
+              <p className="text-sm text-zinc-500">Status</p>
+              <p className="mt-1 text-lg font-medium text-emerald-400">Active Session</p>
+            </div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
+              <p className="text-sm text-zinc-500">Backend</p>
+              <p className="mt-1 text-lg font-medium text-indigo-400">Connected</p>
+            </div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
+              <p className="text-sm text-zinc-500">Environment</p>
+              <p className="mt-1 text-lg font-medium text-zinc-200">Production</p>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
