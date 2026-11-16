@@ -1,5 +1,7 @@
 'use client';
 
+import { setTokens } from '@/lib/auth';
+import { CONFIG } from '@/lib/config';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
