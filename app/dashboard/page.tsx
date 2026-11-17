@@ -142,36 +142,27 @@ export default function DashboardPage() {
     setError("");
     setSuccess("");
 
-    const userId = getUserId();
-    if (!userId) {
-      setError("Unable to determine user ID from token. Please log in again.");
-      setSubmitting(false);
-      return;
-    }
-
     try {
+      // Map frontend state to exact database columns (code and name)
+      const payload = {
+        code: positionCode,
+        name: positionName,
+      };
+
       if (editingId !== null) {
-        // UPDATE (PUT /positions/:id)
+        // UPDATE (PUT /departments/:id)
         await apiClient(`${CONFIG.ENDPOINTS.POSITIONS}/${editingId}`, {
           method: "PUT",
           requiresAuth: true,
-          body: JSON.stringify({
-            position_code: positionCode,
-            position_name: positionName,
-            id: userId,
-          }),
+          body: JSON.stringify(payload),
         });
         setSuccess(`Position #${editingId} updated successfully.`);
       } else {
-        // CREATE (POST /positions)
+        // CREATE (POST /departments)
         await apiClient(CONFIG.ENDPOINTS.POSITIONS, {
           method: "POST",
           requiresAuth: true,
-          body: JSON.stringify({
-            position_code: positionCode,
-            position_name: positionName,
-            id: userId,
-          }),
+          body: JSON.stringify(payload),
         });
         setSuccess("New position created successfully.");
       }
@@ -185,7 +176,7 @@ export default function DashboardPage() {
     }
   };
 
-  // DELETE (DELETE /positions/:id)
+  // DELETE (DELETE /departments/:id)
   const handleDelete = async (positionId: number) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete Position #${positionId}?`
@@ -324,7 +315,7 @@ export default function DashboardPage() {
                   Position Details (#{selectedPosition.position_id})
                 </CardTitle>
                 <CardDescription className="text-slate-400">
-                  Fetched directly from GET /positions/
+                  Fetched directly from GET /departments/
                   {selectedPosition.position_id}
                 </CardDescription>
               </div>
