@@ -143,10 +143,14 @@ export default function DashboardPage() {
     setSuccess("");
 
     try {
-      // Map to your actual database column names: code and name
+      // Send multiple variations so it matches whatever your MySQL columns are named
       const payload = {
         code: positionCode,
         name: positionName,
+        position_code: positionCode,
+        position_name: positionName,
+        department_code: positionCode,
+        department_name: positionName,
       };
 
       if (editingId !== null) {
