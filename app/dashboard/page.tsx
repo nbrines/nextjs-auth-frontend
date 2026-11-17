@@ -143,10 +143,10 @@ export default function DashboardPage() {
     setSuccess("");
 
     try {
-      // Map to your backend's exact expected keys (without the extra id field)
+      // Map to your actual database column names: code and name
       const payload = {
-        position_code: positionCode,
-        position_name: positionName,
+        code: positionCode,
+        name: positionName,
       };
 
       if (editingId !== null) {
