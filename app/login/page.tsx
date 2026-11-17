@@ -29,11 +29,20 @@ export default function LoginPage() {
       if (!res.ok) throw new Error('Invalid credentials');
 
       const data = await res.json();
-      setTokens(data.access_token, data.refresh_token);
+      console.log("LOGIN API RESPONSE:", data);
 
-      router.push(CONFIG.ROUTES.DASHBOARD);
+      const token = data.access_token || data.accessToken;
+      const refreshToken = data.refresh_token || data.refreshToken;
+
+      if (!token) {
+        throw new Error('No token found in response');
+      }
+
+      setTokens(token, refreshToken);
+      window.location.href = CONFIG.ROUTES.DASHBOARD;
     } catch (err: any) {
-      setError('Invalid username or password.');
+      console.error("Login error:", err);
+      setError(err.message || 'Invalid username or password.');
     } finally {
       setLoading(false);
     }
