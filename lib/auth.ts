@@ -3,7 +3,10 @@ import { CONFIG } from "./config";
 
 export const getAccessToken = (): string | null => {
   if (typeof window === "undefined") return null;
-  const token = localStorage.getItem(CONFIG.STORAGE_KEYS.ACCESS_TOKEN);
+  
+  // Try CONFIG key first, then fall back to literal "accessToken"
+  const primaryKey = CONFIG?.STORAGE_KEYS?.ACCESS_TOKEN;
+  const token = (primaryKey ? localStorage.getItem(primaryKey) : null) || localStorage.getItem("accessToken");
 
   if (!token || token === "undefined" || token === "null") {
     return null;
@@ -28,23 +31,35 @@ export const getUserId = (): number | null => {
 export const setTokens = (accessToken?: string, refreshToken?: string): void => {
   if (typeof window === "undefined") return;
 
+  const accessKey = CONFIG?.STORAGE_KEYS?.ACCESS_TOKEN || "accessToken";
+  const refreshKey = CONFIG?.STORAGE_KEYS?.REFRESH_TOKEN || "refreshToken";
+
   if (accessToken && accessToken !== "undefined" && accessToken !== "null") {
-    localStorage.setItem(CONFIG.STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+    localStorage.setItem(accessKey, accessToken);
+    localStorage.setItem("accessToken", accessToken); // ensure both are set
   } else {
-    localStorage.removeItem(CONFIG.STORAGE_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(accessKey);
+    localStorage.removeItem("accessToken");
   }
 
   if (refreshToken && refreshToken !== "undefined" && refreshToken !== "null") {
-    localStorage.setItem(CONFIG.STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+    localStorage.setItem(refreshKey, refreshToken);
+    localStorage.setItem("refreshToken", refreshToken); // ensure both are set
   } else {
-    localStorage.removeItem(CONFIG.STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(refreshKey);
+    localStorage.removeItem("refreshToken");
   }
 };
 
 export const clearTokens = (): void => {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(CONFIG.STORAGE_KEYS.ACCESS_TOKEN);
-  localStorage.removeItem(CONFIG.STORAGE_KEYS.REFRESH_TOKEN);
+  const accessKey = CONFIG?.STORAGE_KEYS?.ACCESS_TOKEN || "accessToken";
+  const refreshKey = CONFIG?.STORAGE_KEYS?.REFRESH_TOKEN || "refreshToken";
+  
+  localStorage.removeItem(accessKey);
+  localStorage.removeItem(refreshKey);
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
 };
 
 export const isAuthenticated = (): boolean => {
