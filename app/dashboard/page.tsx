@@ -37,8 +37,7 @@ import {
 
 interface Department {
   department_id: number;
-  position_code: string;
-  position_name: string;
+  department_name: string;
   id?: number;
   created_at?: string;
   updated_at?: string;
@@ -59,10 +58,9 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Form states (shared for Create and Update)
+  // Form states (Create and Update)
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [departmentCode, setDepartmentCode] = useState("");
   const [departmentName, setDepartmentName] = useState("");
 
   // READ (All Departments)
@@ -109,7 +107,6 @@ export default function DashboardPage() {
   // Open Form for CREATE
   const openCreateForm = () => {
     setEditingId(null);
-    setDepartmentCode("");
     setDepartmentName("");
     setSelectedDepartment(null);
     setError("");
@@ -121,8 +118,7 @@ export default function DashboardPage() {
   const openEditForm = (dept: Department) => {
     const id = dept.department_id ?? dept.id!;
     setEditingId(id);
-    setDepartmentCode(dept.position_code);
-    setDepartmentName(dept.position_name);
+    setDepartmentName(dept.department_name);
     setSelectedDepartment(null);
     setError("");
     setSuccess("");
@@ -132,7 +128,6 @@ export default function DashboardPage() {
   const closeForm = () => {
     setIsFormOpen(false);
     setEditingId(null);
-    setDepartmentCode("");
     setDepartmentName("");
   };
 
@@ -144,10 +139,9 @@ export default function DashboardPage() {
     setSuccess("");
 
     try {
-      // Matches your MySQL departments table columns (position_code, position_name)
+      // Aligned with the database schema columns (department_name)
       const payload = {
-        position_code: departmentCode,
-        position_name: departmentName,
+        department_name: departmentName,
       };
 
       if (editingId !== null) {
@@ -260,7 +254,7 @@ export default function DashboardPage() {
                 </CardTitle>
                 <CardDescription className="text-slate-400">
                   {editingId !== null
-                    ? "Modify the department code and name below."
+                    ? "Modify the department name below."
                     : "Fill in the details to add a new department."}
                 </CardDescription>
               </div>
@@ -275,33 +269,18 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="department_code" className="text-slate-300">
-                      Department Code
-                    </Label>
-                    <Input
-                      id="department_code"
-                      placeholder="e.g. IT"
-                      value={departmentCode}
-                      onChange={(e) => setDepartmentCode(e.target.value)}
-                      className="bg-black border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-slate-700"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="department_name" className="text-slate-300">
-                      Department Name
-                    </Label>
-                    <Input
-                      id="department_name"
-                      placeholder="e.g. Information Technology"
-                      value={departmentName}
-                      onChange={(e) => setDepartmentName(e.target.value)}
-                      className="bg-black border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-slate-700"
-                      required
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="department_name" className="text-slate-300">
+                    Department Name
+                  </Label>
+                  <Input
+                    id="department_name"
+                    placeholder="e.g. Information Technology"
+                    value={departmentName}
+                    onChange={(e) => setDepartmentName(e.target.value)}
+                    className="bg-black border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-slate-700"
+                    required
+                  />
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button
@@ -351,7 +330,7 @@ export default function DashboardPage() {
                 <X className="w-4 h-4" />
               </Button>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
                 <span className="text-slate-400 block">Department ID</span>
                 <span className="font-medium text-white">
@@ -359,15 +338,9 @@ export default function DashboardPage() {
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block">Code</span>
+                <span className="text-slate-400 block">Department Name</span>
                 <span className="font-medium text-white">
-                  {selectedDepartment.position_code}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block">Name</span>
-                <span className="font-medium text-white">
-                  {selectedDepartment.position_name}
+                  {selectedDepartment.department_name}
                 </span>
               </div>
               <div>
@@ -423,9 +396,6 @@ export default function DashboardPage() {
                       ID
                     </TableHead>
                     <TableHead className="text-slate-400">
-                      Department Code
-                    </TableHead>
-                    <TableHead className="text-slate-400">
                       Department Name
                     </TableHead>
                     <TableHead className="text-slate-400">
@@ -440,7 +410,7 @@ export default function DashboardPage() {
                   {loading ? (
                     <TableRow className="border-slate-800">
                       <TableCell
-                        colSpan={5}
+                        colSpan={4}
                         className="h-24 text-center text-slate-500"
                       >
                         Loading departments...
@@ -449,7 +419,7 @@ export default function DashboardPage() {
                   ) : departments.length === 0 ? (
                     <TableRow className="border-slate-800">
                       <TableCell
-                        colSpan={5}
+                        colSpan={4}
                         className="h-24 text-center text-slate-500"
                       >
                         No departments found. Click &quot;Create Department&quot;
@@ -468,10 +438,7 @@ export default function DashboardPage() {
                             {deptId}
                           </TableCell>
                           <TableCell className="text-slate-300">
-                            {dept.position_code}
-                          </TableCell>
-                          <TableCell className="text-slate-300">
-                            {dept.position_name}
+                            {dept.department_name}
                           </TableCell>
                           <TableCell className="text-slate-400">
                             {dept.created_at
