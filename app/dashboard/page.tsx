@@ -2,7 +2,6 @@
 "use client";
 
 import { clearTokens } from "@/lib/auth";
-
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -36,8 +35,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-interface Position {
-  position_id: number;
+interface Department {
+  department_id: number;
   position_code: string;
   position_name: string;
   id?: number;
@@ -45,15 +44,16 @@ interface Position {
   updated_at?: string;
 }
 
+const DEPARTMENTS_ENDPOINT = "/departments";
+
 export default function DashboardPage() {
   const router = useRouter();
   const { isChecking } = useAuthGuard({ requireAuth: true });
 
   // Data states
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [selectedPosition, setSelectedPosition] = useState<Position | null>(
-    null
-  );
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [selectedDepartment, setSelectedDepartment] =
+    useState<Department | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -62,21 +62,21 @@ export default function DashboardPage() {
   // Form states (shared for Create and Update)
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [positionCode, setPositionCode] = useState("");
-  const [positionName, setPositionName] = useState("");
+  const [departmentCode, setDepartmentCode] = useState("");
+  const [departmentName, setDepartmentName] = useState("");
 
-  // READ (All Positions)
-  const fetchPositions = useCallback(async () => {
+  // READ (All Departments)
+  const fetchDepartments = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await apiClient<Position[]>(CONFIG.ENDPOINTS.POSITIONS, {
+      const data = await apiClient<Department[]>(DEPARTMENTS_ENDPOINT, {
         method: "GET",
         requiresAuth: true,
       });
-      setPositions(Array.isArray(data) ? data : []);
+      setDepartments(Array.isArray(data) ? data : []);
     } catch (err: any) {
-      setError(err.message || "Failed to fetch positions.");
+      setError(err.message || "Failed to fetch departments.");
     } finally {
       setLoading(false);
     }
@@ -84,45 +84,46 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!isChecking) {
-      fetchPositions();
+      fetchDepartments();
     }
-  }, [isChecking, fetchPositions]);
+  }, [isChecking, fetchDepartments]);
 
-  // READ (Single Position)
-  const handleViewPosition = async (positionId: number) => {
+  // READ (Single Department)
+  const handleViewDepartment = async (departmentId: number) => {
     setError("");
     setSuccess("");
     try {
-      const data = await apiClient<Position>(
-        `${CONFIG.ENDPOINTS.POSITIONS}/${positionId}`,
+      const data = await apiClient<Department>(
+        `${DEPARTMENTS_ENDPOINT}/${departmentId}`,
         {
           method: "GET",
           requiresAuth: true,
         }
       );
-      setSelectedPosition(data);
+      setSelectedDepartment(data);
     } catch (err: any) {
-      setError(err.message || "Failed to load position details.");
+      setError(err.message || "Failed to load department details.");
     }
   };
 
   // Open Form for CREATE
   const openCreateForm = () => {
     setEditingId(null);
-    setPositionCode("");
-    setPositionName("");
-    setSelectedPosition(null);
+    setDepartmentCode("");
+    setDepartmentName("");
+    setSelectedDepartment(null);
     setError("");
     setSuccess("");
     setIsFormOpen(true);
   };
 
   // Open Form for UPDATE
-  const openEditForm = (position: Position) => {
-    setEditingId(position.position_id);
-    setPositionCode(position.position_code);
-    setPositionName(position.position_name);
-    setSelectedPosition(null);
+  const openEditForm = (dept: Department) => {
+    const id = dept.department_id ?? dept.id!;
+    setEditingId(id);
+    setDepartmentCode(dept.position_code);
+    setDepartmentName(dept.position_name);
+    setSelectedDepartment(null);
     setError("");
     setSuccess("");
     setIsFormOpen(true);
@@ -131,8 +132,8 @@ export default function DashboardPage() {
   const closeForm = () => {
     setIsFormOpen(false);
     setEditingId(null);
-    setPositionCode("");
-    setPositionName("");
+    setDepartmentCode("");
+    setDepartmentName("");
   };
 
   // CREATE & UPDATE Submit Handler
@@ -143,34 +144,32 @@ export default function DashboardPage() {
     setSuccess("");
 
     try {
-      // Clean payload covering both common NestJS DTO naming conventions
+      // Matches your MySQL departments table columns (position_code, position_name)
       const payload = {
-        code: positionCode,
-        name: positionName,
-        position_code: positionCode,
-        position_name: positionName,
+        position_code: departmentCode,
+        position_name: departmentName,
       };
 
       if (editingId !== null) {
         // UPDATE
-        await apiClient(`${CONFIG.ENDPOINTS.POSITIONS}/${editingId}`, {
+        await apiClient(`${DEPARTMENTS_ENDPOINT}/${editingId}`, {
           method: "PUT",
           requiresAuth: true,
           body: JSON.stringify(payload),
         });
-        setSuccess(`Position #${editingId} updated successfully.`);
+        setSuccess(`Department #${editingId} updated successfully.`);
       } else {
         // CREATE
-        await apiClient(CONFIG.ENDPOINTS.POSITIONS, {
+        await apiClient(DEPARTMENTS_ENDPOINT, {
           method: "POST",
           requiresAuth: true,
           body: JSON.stringify(payload),
         });
-        setSuccess("New position created successfully.");
+        setSuccess("New department created successfully.");
       }
 
       closeForm();
-      await fetchPositions();
+      await fetchDepartments();
     } catch (err: any) {
       setError(err.message || "Operation failed.");
     } finally {
@@ -179,27 +178,29 @@ export default function DashboardPage() {
   };
 
   // DELETE
-  const handleDelete = async (positionId: number) => {
+  const handleDelete = async (departmentId: number) => {
     const confirmed = window.confirm(
-      `Are you sure you want to delete Position #${positionId}?`
+      `Are you sure you want to delete Department #${departmentId}?`
     );
     if (!confirmed) return;
 
     setError("");
     setSuccess("");
     try {
-      await apiClient(`${CONFIG.ENDPOINTS.POSITIONS}/${positionId}`, {
+      await apiClient(`${DEPARTMENTS_ENDPOINT}/${departmentId}`, {
         method: "DELETE",
         requiresAuth: true,
       });
 
-      if (selectedPosition?.position_id === positionId) {
-        setSelectedPosition(null);
+      const selectedId =
+        selectedDepartment?.department_id ?? selectedDepartment?.id;
+      if (selectedId === departmentId) {
+        setSelectedDepartment(null);
       }
-      setSuccess(`Position #${positionId} deleted successfully.`);
-      await fetchPositions();
+      setSuccess(`Department #${departmentId} deleted successfully.`);
+      await fetchDepartments();
     } catch (err: any) {
-      setError(err.message || "Failed to delete position.");
+      setError(err.message || "Failed to delete department.");
     }
   };
 
@@ -222,9 +223,11 @@ export default function DashboardPage() {
         {/* Top Navbar */}
         <header className="flex justify-between items-center border-b border-slate-800 pb-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Dashboard</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-white">
+              Dashboard
+            </h1>
             <p className="text-sm text-slate-400">
-              Manage organization positions
+              Manage organization departments
             </p>
           </div>
           <Button variant="destructive" onClick={handleLogout}>
@@ -252,16 +255,21 @@ export default function DashboardPage() {
               <div>
                 <CardTitle className="text-white">
                   {editingId !== null
-                    ? `Update Position #${editingId}`
-                    : "Create New Position"}
+                    ? `Update Department #${editingId}`
+                    : "Create New Department"}
                 </CardTitle>
                 <CardDescription className="text-slate-400">
                   {editingId !== null
-                    ? "Modify the position code and name below."
-                    : "Fill in the details to add a new position."}
+                    ? "Modify the department code and name below."
+                    : "Fill in the details to add a new department."}
                 </CardDescription>
               </div>
-              <Button variant="ghost" size="icon" onClick={closeForm} className="text-slate-400 hover:text-white">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={closeForm}
+                className="text-slate-400 hover:text-white"
+              >
                 <X className="w-4 h-4" />
               </Button>
             </CardHeader>
@@ -269,38 +277,51 @@ export default function DashboardPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="position_code" className="text-slate-300">Position Code</Label>
+                    <Label htmlFor="department_code" className="text-slate-300">
+                      Department Code
+                    </Label>
                     <Input
-                      id="position_code"
-                      placeholder="e.g. Pres"
-                      value={positionCode}
-                      onChange={(e) => setPositionCode(e.target.value)}
+                      id="department_code"
+                      placeholder="e.g. IT"
+                      value={departmentCode}
+                      onChange={(e) => setDepartmentCode(e.target.value)}
                       className="bg-black border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-slate-700"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="position_name" className="text-slate-300">Position Name</Label>
+                    <Label htmlFor="department_name" className="text-slate-300">
+                      Department Name
+                    </Label>
                     <Input
-                      id="position_name"
-                      placeholder="e.g. President"
-                      value={positionName}
-                      onChange={(e) => setPositionName(e.target.value)}
+                      id="department_name"
+                      placeholder="e.g. Information Technology"
+                      value={departmentName}
+                      onChange={(e) => setDepartmentName(e.target.value)}
                       className="bg-black border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-slate-700"
                       required
                     />
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={closeForm} className="border-slate-800 bg-black text-slate-300 hover:bg-slate-900 hover:text-white">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={closeForm}
+                    className="border-slate-800 bg-black text-slate-300 hover:bg-slate-900 hover:text-white"
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={submitting} className="bg-white text-black hover:bg-slate-200">
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    className="bg-white text-black hover:bg-slate-200"
+                  >
                     {submitting
                       ? "Saving..."
                       : editingId !== null
                       ? "Save Changes"
-                      : "Create Position"}
+                      : "Create Department"}
                   </Button>
                 </div>
               </form>
@@ -309,12 +330,13 @@ export default function DashboardPage() {
         )}
 
         {/* READ Single Item Details Card */}
-        {selectedPosition && (
+        {selectedDepartment && (
           <Card className="bg-slate-950 border-slate-800 text-slate-100">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
                 <CardTitle className="text-white">
-                  Position Details (#{selectedPosition.position_id})
+                  Department Details (#
+                  {selectedDepartment.department_id ?? selectedDepartment.id})
                 </CardTitle>
                 <CardDescription className="text-slate-400">
                   Fetched directly from backend API
@@ -323,7 +345,7 @@ export default function DashboardPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setSelectedPosition(null)}
+                onClick={() => setSelectedDepartment(null)}
                 className="text-slate-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
@@ -331,28 +353,30 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <span className="text-slate-400 block">Position ID</span>
+                <span className="text-slate-400 block">Department ID</span>
                 <span className="font-medium text-white">
-                  {selectedPosition.position_id}
+                  {selectedDepartment.department_id ?? selectedDepartment.id}
                 </span>
               </div>
               <div>
                 <span className="text-slate-400 block">Code</span>
                 <span className="font-medium text-white">
-                  {selectedPosition.position_code}
+                  {selectedDepartment.position_code}
                 </span>
               </div>
               <div>
                 <span className="text-slate-400 block">Name</span>
                 <span className="font-medium text-white">
-                  {selectedPosition.position_name}
+                  {selectedDepartment.position_name}
                 </span>
               </div>
               <div>
                 <span className="text-slate-400 block">Created At</span>
                 <span className="font-medium text-white">
-                  {selectedPosition.created_at
-                    ? new Date(selectedPosition.created_at).toLocaleDateString()
+                  {selectedDepartment.created_at
+                    ? new Date(
+                        selectedDepartment.created_at
+                      ).toLocaleDateString()
                     : "N/A"}
                 </span>
               </div>
@@ -360,19 +384,19 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {/* Positions Table Card */}
+        {/* Departments Table Card */}
         <Card className="bg-slate-950 border-slate-800 text-slate-100">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="text-white">Positions</CardTitle>
+              <CardTitle className="text-white">Departments</CardTitle>
               <CardDescription className="text-slate-400">
-                A list of all positions stored in the backend.
+                A list of all departments stored in the backend.
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                onClick={fetchPositions}
+                onClick={fetchDepartments}
                 disabled={loading}
                 className="border-slate-800 bg-black text-slate-300 hover:bg-slate-900 hover:text-white"
               >
@@ -381,9 +405,12 @@ export default function DashboardPage() {
                 />
                 Read / Refresh
               </Button>
-              <Button onClick={openCreateForm} className="bg-white text-black hover:bg-slate-200">
+              <Button
+                onClick={openCreateForm}
+                className="bg-white text-black hover:bg-slate-200"
+              >
                 <Plus className="w-4 h-4 mr-2" />
-                Create Position
+                Create Department
               </Button>
             </div>
           </CardHeader>
@@ -392,11 +419,21 @@ export default function DashboardPage() {
               <Table>
                 <TableHeader className="bg-black">
                   <TableRow className="border-slate-800 hover:bg-transparent">
-                    <TableHead className="w-[90px] text-slate-400">ID</TableHead>
-                    <TableHead className="text-slate-400">Position Code</TableHead>
-                    <TableHead className="text-slate-400">Position Name</TableHead>
-                    <TableHead className="text-slate-400">Created At</TableHead>
-                    <TableHead className="text-right text-slate-400">Actions</TableHead>
+                    <TableHead className="w-[90px] text-slate-400">
+                      ID
+                    </TableHead>
+                    <TableHead className="text-slate-400">
+                      Department Code
+                    </TableHead>
+                    <TableHead className="text-slate-400">
+                      Department Name
+                    </TableHead>
+                    <TableHead className="text-slate-400">
+                      Created At
+                    </TableHead>
+                    <TableHead className="text-right text-slate-400">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -406,66 +443,74 @@ export default function DashboardPage() {
                         colSpan={5}
                         className="h-24 text-center text-slate-500"
                       >
-                        Loading positions...
+                        Loading departments...
                       </TableCell>
                     </TableRow>
-                  ) : positions.length === 0 ? (
+                  ) : departments.length === 0 ? (
                     <TableRow className="border-slate-800">
                       <TableCell
                         colSpan={5}
                         className="h-24 text-center text-slate-500"
                       >
-                        No positions found. Click &quot;Create Position&quot; to
-                        add one.
+                        No departments found. Click &quot;Create Department&quot;
+                        to add one.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    positions.map((pos) => (
-                      <TableRow key={pos.position_id} className="border-slate-800 hover:bg-slate-900/50">
-                        <TableCell className="font-medium text-white">
-                          {pos.position_id}
-                        </TableCell>
-                        <TableCell className="text-slate-300">{pos.position_code}</TableCell>
-                        <TableCell className="text-slate-300">{pos.position_name}</TableCell>
-                        <TableCell className="text-slate-400">
-                          {pos.created_at
-                            ? new Date(pos.created_at).toLocaleDateString()
-                            : "-"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleViewPosition(pos.position_id)
-                              }
-                              className="border-slate-800 bg-black text-slate-300 hover:bg-slate-900 hover:text-white"
-                            >
-                              <Eye className="w-4 h-4 mr-1" />
-                              Read
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => openEditForm(pos)}
-                              className="bg-slate-800 text-slate-100 hover:bg-slate-700"
-                            >
-                              <Pencil className="w-4 h-4 mr-1" />
-                              Update
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDelete(pos.position_id)}
-                            >
-                              <Trash2 className="w-4 h-4 mr-1" />
-                              Delete
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    departments.map((dept) => {
+                      const deptId = dept.department_id ?? dept.id!;
+                      return (
+                        <TableRow
+                          key={deptId}
+                          className="border-slate-800 hover:bg-slate-900/50"
+                        >
+                          <TableCell className="font-medium text-white">
+                            {deptId}
+                          </TableCell>
+                          <TableCell className="text-slate-300">
+                            {dept.position_code}
+                          </TableCell>
+                          <TableCell className="text-slate-300">
+                            {dept.position_name}
+                          </TableCell>
+                          <TableCell className="text-slate-400">
+                            {dept.created_at
+                              ? new Date(dept.created_at).toLocaleDateString()
+                              : "-"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewDepartment(deptId)}
+                                className="border-slate-800 bg-black text-slate-300 hover:bg-slate-900 hover:text-white"
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                Read
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => openEditForm(dept)}
+                                className="bg-slate-800 text-slate-100 hover:bg-slate-700"
+                              >
+                                <Pencil className="w-4 h-4 mr-1" />
+                                Update
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDelete(deptId)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-1" />
+                                Delete
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
