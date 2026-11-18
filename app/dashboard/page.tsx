@@ -1,7 +1,7 @@
 // app/dashboard/page.tsx
 "use client";
 
-import { clearTokens, getUserId } from "@/lib/auth";
+import { clearTokens } from "@/lib/auth";
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -143,18 +143,16 @@ export default function DashboardPage() {
     setSuccess("");
 
     try {
-      // Send multiple variations so it matches whatever your MySQL columns are named
+      // Clean payload covering both common NestJS DTO naming conventions
       const payload = {
         code: positionCode,
         name: positionName,
         position_code: positionCode,
         position_name: positionName,
-        department_code: positionCode,
-        department_name: positionName,
       };
 
       if (editingId !== null) {
-        // UPDATE (PUT /departments/:id)
+        // UPDATE
         await apiClient(`${CONFIG.ENDPOINTS.POSITIONS}/${editingId}`, {
           method: "PUT",
           requiresAuth: true,
@@ -162,7 +160,7 @@ export default function DashboardPage() {
         });
         setSuccess(`Position #${editingId} updated successfully.`);
       } else {
-        // CREATE (POST /departments)
+        // CREATE
         await apiClient(CONFIG.ENDPOINTS.POSITIONS, {
           method: "POST",
           requiresAuth: true,
@@ -180,7 +178,7 @@ export default function DashboardPage() {
     }
   };
 
-  // DELETE (DELETE /departments/:id)
+  // DELETE
   const handleDelete = async (positionId: number) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete Position #${positionId}?`
@@ -319,8 +317,7 @@ export default function DashboardPage() {
                   Position Details (#{selectedPosition.position_id})
                 </CardTitle>
                 <CardDescription className="text-slate-400">
-                  Fetched directly from GET /departments/
-                  {selectedPosition.position_id}
+                  Fetched directly from backend API
                 </CardDescription>
               </div>
               <Button
